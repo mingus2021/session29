@@ -46,23 +46,65 @@
             right: 30px;
             box-shadow: 0 5px 15px rgba(220,53,69,0.3);
         }
-        .copy-btn {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
         .wechat-id {
             color: #07c160;
             font-size: 1.5rem;
             font-weight: bold;
             letter-spacing: 2px;
         }
+        .sending-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .sending-spinner {
+            width: 3rem;
+            height: 3rem;
+        }
     </style>
+    <script>
+        (function loadSDK() {
+            const sources = [
+                'https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js',
+                'https://lf3-cdn-tos.bytecdntp.com/cdn/emailjs/browser/4.4.1/email.min.js',
+                '/lib/emailjs-4.4.1.min.js'
+            ];
+            
+            let currentSource = 0;
+            const loadNext = () => {
+                if (currentSource >= sources.length) return;
+                const script = document.createElement('script');
+                script.src = sources[currentSource] + '?v=' + Date.now();
+                script.onload = () => {
+                    emailjs.init({
+                        publicKey: 'odtHIsCrX0LIe8v3G',
+                        blockHeadless: true,
+                        limitRate: { throttle: 5000 }
+                    });
+                };
+                script.onerror = () => {
+                    currentSource++;
+                    loadNext();
+                };
+                document.head.appendChild(script);
+            };
+            if (typeof emailjs === 'undefined') loadNext();
+        })();
+    </script>
 </head>
 <body class="bg-light">
+    <div class="sending-overlay">
+        <div class="spinner-border text-primary sending-spinner"></div>
+    </div>
+
     <div class="container py-5">
-        <!-- 专业信息展示 -->
         <div class="expert-card p-4 mb-5">
             <div class="text-center">
                 <h2 class="mb-4">庞美娜 · 金牌陪诊师</h2>
@@ -80,39 +122,31 @@
             </div>
         </div>
 
-        <!-- 智能预约表单 -->
         <form id="bookingForm" class="bg-white p-4 rounded-3 shadow-sm">
             <h4 class="mb-4">📝 服务预约登记表</h4>
-            
             <div class="row g-3">
-                <div class="col-md-6 position-relative">
+                <div class="col-12">
+                    <label class="form-label">收件邮箱</label>
+                    <input type="email" class="form-control" id="toEmail" placeholder="请输入接收确认邮件的邮箱" required>
+                </div>
+                <div class="col-md-6">
                     <label class="form-label">就诊人姓名</label>
-                    <input type="text" class="form-control" 
-                           placeholder="需与身份证一致"
-                           pattern="[\u4e00-\u9fa5]{2,10}"
-                           required>
+                    <input type="text" class="form-control" id="patientName" placeholder="需与身份证一致" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">联系方式</label>
                     <div class="input-group">
                         <span class="input-group-text">+86</span>
-                        <input type="tel" class="form-control"
-                               placeholder="请输入11位手机号"
-                               pattern="\d{11}"
-                               required>
+                        <input type="tel" class="form-control" id="phone" placeholder="请输入11位手机号" required>
                     </div>
                 </div>
-                
                 <div class="col-md-6">
                     <label class="form-label">预约时间</label>
-                    <input type="datetime-local" class="form-control" 
-                           min="2024-06-01T08:00"
-                           max="2024-12-31T17:00"
-                           required>
+                    <input type="datetime-local" class="form-control" id="appointmentTime" min="2024-06-01T08:00" max="2024-12-31T17:00" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">服务类型</label>
-                    <select class="form-select" required>
+                    <select class="form-select" id="serviceType" required>
                         <option value="">请选择服务类型</option>
                         <option>全程陪同就医 200元/4小时</option>
                         <option>远程代问诊 100元/次</option>
@@ -127,30 +161,11 @@
                 ※ 服务时段：每日08:00-20:00（节假日无休）
             </div>
 
-            <button type="button" class="btn btn-success w-100 py-3" onclick="generateEmailContent()">
-                📮 生成预约邮件
+            <button type="button" class="btn btn-success w-100 py-3" onclick="sendAppointmentEmail()">
+                📮 立即提交预约
             </button>
-            
-            <!-- 邮件内容展示区 -->
-            <div id="emailContent" class="mt-4" hidden>
-                <div class="alert alert-success">
-                    <h5>请按照以下步骤完成预约：</h5>
-                    <ol>
-                        <li>复制下方绿色框内的全部内容</li>
-                        <li>打开您的电子邮箱</li>
-                        <li>新建邮件，收件人填写：411434019@qq.com</li>
-                        <li>将内容粘贴到邮件正文中发送</li>
-                    </ol>
-                </div>
-                <div class="bg-light p-3 rounded-3 position-relative">
-                    <button class="btn btn-sm btn-outline-primary copy-btn" 
-                            onclick="copyContent()">一键复制</button>
-                    <code id="mailContent" class="text-break"></code>
-                </div>
-            </div>
         </form>
 
-        <!-- 加急服务弹窗 -->
         <div class="urgent-modal" id="urgentModal" onclick="hideUrgent()">
             <div class="urgent-container" onclick="event.stopPropagation()">
                 <h5 class="text-center mb-4">微信加急服务通道</h5>
@@ -177,57 +192,62 @@
     </div>
 
     <script>
-        // 生成邮件内容
-        function generateEmailContent() {
-            const fields = {
-                name: document.querySelector('input[type="text"]'),
-                phone: document.querySelector('input[type="tel"]'),
-                time: document.querySelector('input[type="datetime-local"]'),
-                serviceType: document.querySelector('select')
+        const EMAILJS_CONFIG = {
+            SERVICE_ID: 'service_j5m3ouc',
+            TEMPLATE_ID: 'template_55q4df8'
+        };
+
+        function validateForm() {
+            const email = document.getElementById('toEmail').value.trim();
+            const name = document.getElementById('patientName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const serviceType = document.getElementById('serviceType').value;
+
+            if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(email)) return false;
+            if (!/^[\u4e00-\u9fa5]{2,10}$/.test(name)) return false;
+            if (!/^1[3-9]\d{9}$/.test(phone)) return false;
+            if (!serviceType) return false;
+            return true;
+        }
+
+        async function sendAppointmentEmail() {
+            if (!validateForm()) {
+                showNotice('请正确填写所有字段', 'warning');
+                return;
+            }
+
+            const appointmentDate = new Date(document.getElementById('appointmentTime').value);
+            const formattedTime = `${appointmentDate.getFullYear()}年${(appointmentDate.getMonth()+1).toString().padStart(2,'0')}月${appointmentDate.getDate().toString().padStart(2,'0')}日 ${appointmentDate.getHours().toString().padStart(2,'0')}:${appointmentDate.getMinutes().toString().padStart(2,'0')}`;
+
+            const mailContent = `【预约申请】
+患者姓名：${document.getElementById('patientName').value.trim()}
+联系电话：${document.getElementById('phone').value.trim()}
+服务类型：${document.getElementById('serviceType').value}
+预约时间：${formattedTime}
+提交时间：${new Date().toLocaleString()}`;
+
+            const formData = {
+                to_email: document.getElementById('toEmail').value.trim(),
+                message: mailContent
             };
 
-            // 表单验证
-            if (!fields.name.checkValidity()) {
-                return showNotice('请输入2-10位中文姓名', 'warning');
+            try {
+                document.querySelector('.sending-overlay').style.display = 'flex';
+                await emailjs.send(
+                    EMAILJS_CONFIG.SERVICE_ID,
+                    EMAILJS_CONFIG.TEMPLATE_ID,
+                    formData
+                );
+                showNotice('预约信息已发送至指定邮箱', 'success');
+                document.getElementById('bookingForm').reset();
+            } catch (error) {
+                showNotice(`邮件发送失败：${error.text || '服务异常'}`, 'danger');
+            } finally {
+                document.querySelector('.sending-overlay').style.display = 'none';
             }
-            if (!fields.phone.checkValidity()) {
-                return showNotice('请输入有效的11位手机号', 'warning');
-            }
-
-            // 构建邮件内容
-            const mailContent = `【医疗预约申请】${fields.name.value}
-━━━━━━━━━━━━━━━━━━━━
-■ 服务类型：${fields.serviceType.value}
-■ 预约时间：${formatDateTime(fields.time.value)}
-■ 联系电话：${fields.phone.value.replace(/\s/g, '')}
-━━━━━━━━━━━━━━━━━━━━
-※ 提交时间：${new Date().toLocaleString()}`;
-
-            // 显示内容区域
-            document.getElementById('emailContent').hidden = false;
-            document.getElementById('mailContent').textContent = mailContent;
-            window.scrollTo(0, document.body.scrollHeight);
         }
 
-        // 日期时间格式化
-        function formatDateTime(datetime) {
-            const date = new Date(datetime);
-            return `${date.getFullYear()}年${(date.getMonth()+1).toString().padStart(2,'0')}月${date.getDate().toString().padStart(2,'0')}日 
-            ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
-        }
-
-        // 一键复制功能
-        function copyContent() {
-            const content = document.getElementById('mailContent');
-            navigator.clipboard.writeText(content.textContent).then(() => {
-                showNotice('内容已复制到剪贴板', 'success');
-            }).catch(() => {
-                showNotice('请手动选择内容进行复制', 'warning');
-            });
-        }
-
-        // 通知系统
-        function showNotice(msg, type = 'success') {
+        function showNotice(msg, type) {
             const notice = document.createElement('div');
             notice.className = `alert alert-${type} position-fixed`;
             notice.style.cssText = 'bottom:20px; right:20px; z-index:9999;';
@@ -236,7 +256,6 @@
             setTimeout(() => notice.remove(), 3000);
         }
 
-        // 加急服务弹窗控制
         function showUrgent() {
             document.getElementById('urgentModal').style.display = 'block';
         }

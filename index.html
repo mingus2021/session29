@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>庞美娜金牌陪诊服务系统</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .expert-card {
+            background: #f8fbff;
+            border: 2px solid #e8f4ff;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(7,193,96,0.1);
+            transition: transform 0.3s ease;
+        }
+        .expert-card:hover {
+            transform: translateY(-5px);
+        }
+        .urgent-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            z-index: 1000;
+        }
+        .urgent-container {
+            position: relative;
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            width: 320px;
+            margin: 20% auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            animation: popIn 0.3s ease;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .urgent-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            box-shadow: 0 5px 15px rgba(220,53,69,0.3);
+        }
+        .copy-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .wechat-id {
+            color: #07c160;
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <!-- 专业信息展示 -->
+        <div class="expert-card p-4 mb-5">
+            <div class="text-center">
+                <h2 class="mb-4">庞美娜 · 金牌陪诊师</h2>
+                <div class="d-flex gap-2 mb-3 justify-content-center">
+                    <span class="badge bg-primary">16年三甲医院经验</span>
+                    <span class="badge bg-danger">国际急救认证</span>
+                    <span class="badge bg-warning">心理咨询师二级</span>
+                </div>
+                <ul class="list-unstyled">
+                    <li class="mb-2">✅ 累计服务1526人次 | 好评率100%</li>
+                    <li class="mb-2">✅ 精通肿瘤/术后/儿童/孕妇/老年病全程陪诊</li>
+                    <li>✅ 覆盖杭州邵逸夫/浙一/省妇保等三甲医院</li>
+                </ul>
+                <div class="badge bg-success mt-3">卫健委认证编号：201237001454</div>
+            </div>
+        </div>
+
+        <!-- 智能预约表单 -->
+        <form id="bookingForm" class="bg-white p-4 rounded-3 shadow-sm">
+            <h4 class="mb-4">📝 服务预约登记表</h4>
+            
+            <div class="row g-3">
+                <div class="col-md-6 position-relative">
+                    <label class="form-label">就诊人姓名</label>
+                    <input type="text" class="form-control" 
+                           placeholder="需与身份证一致"
+                           pattern="[\u4e00-\u9fa5]{2,10}"
+                           required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">联系方式</label>
+                    <div class="input-group">
+                        <span class="input-group-text">+86</span>
+                        <input type="tel" class="form-control"
+                               placeholder="请输入11位手机号"
+                               pattern="\d{11}"
+                               required>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">预约时间</label>
+                    <input type="datetime-local" class="form-control" 
+                           min="2024-06-01T08:00"
+                           max="2024-12-31T17:00"
+                           required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">服务类型</label>
+                    <select class="form-select" required>
+                        <option value="">请选择服务类型</option>
+                        <option>全程陪同就医 200元/4小时</option>
+                        <option>远程代问诊 100元/次</option>
+                        <option>检查报告代取 100元/次</option>
+                        <option>药品代购配送 100元/次</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-4">
+                <i class="bi bi-shield-check me-2"></i>
+                ※ 服务时段：每日08:00-20:00（节假日无休）
+            </div>
+
+            <button type="button" class="btn btn-success w-100 py-3" onclick="generateEmailContent()">
+                📮 生成预约邮件
+            </button>
+            
+            <!-- 邮件内容展示区 -->
+            <div id="emailContent" class="mt-4" hidden>
+                <div class="alert alert-success">
+                    <h5>请按照以下步骤完成预约：</h5>
+                    <ol>
+                        <li>复制下方绿色框内的全部内容</li>
+                        <li>打开您的电子邮箱</li>
+                        <li>新建邮件，收件人填写：285696930@qq.com</li>
+                        <li>将内容粘贴到邮件正文中发送</li>
+                    </ol>
+                </div>
+                <div class="bg-light p-3 rounded-3 position-relative">
+                    <button class="btn btn-sm btn-outline-primary copy-btn" 
+                            onclick="copyContent()">一键复制</button>
+                    <code id="mailContent" class="text-break"></code>
+                </div>
+            </div>
+        </form>
+
+        <!-- 加急服务弹窗 -->
+        <div class="urgent-modal" id="urgentModal" onclick="hideUrgent()">
+            <div class="urgent-container" onclick="event.stopPropagation()">
+                <h5 class="text-center mb-4">微信加急服务通道</h5>
+                <div class="text-center">
+                    <p class="text-danger mb-3">※ 加急服务费用：原价基础上+50%</p>
+                    <div class="alert alert-warning">
+                        <p class="mb-2">请按以下步骤操作：</p>
+                        <ol class="text-start">
+                            <li>打开微信</li>
+                            <li>点击右上角"+"号</li>
+                            <li>选择"添加朋友"</li>
+                            <li>搜索微信号：</li>
+                        </ol>
+                        <div class="wechat-id mt-3">landon6699</div>
+                    </div>
+                    <p class="text-muted small mt-3">添加时备注：加急+手机号</p>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-danger urgent-btn" onclick="showUrgent()">
+            ⚡ 加急预约通道（+50%费用）
+        </button>
+    </div>
+
+    <script>
+        // 生成邮件内容
+        function generateEmailContent() {
+            const fields = {
+                name: document.querySelector('input[type="text"]'),
+                phone: document.querySelector('input[type="tel"]'),
+                time: document.querySelector('input[type="datetime-local"]'),
+                serviceType: document.querySelector('select')
+            };
+
+            // 表单验证
+            if (!fields.name.checkValidity()) {
+                return showNotice('请输入2-10位中文姓名', 'warning');
+            }
+            if (!fields.phone.checkValidity()) {
+                return showNotice('请输入有效的11位手机号', 'warning');
+            }
+
+            // 构建邮件内容
+            const mailContent = `【医疗预约申请】${fields.name.value}
+━━━━━━━━━━━━━━━━━━━━
+■ 服务类型：${fields.serviceType.value}
+■ 预约时间：${formatDateTime(fields.time.value)}
+■ 联系电话：${fields.phone.value.replace(/\s/g, '')}
+━━━━━━━━━━━━━━━━━━━━
+※ 提交时间：${new Date().toLocaleString()}`;
+
+            // 显示内容区域
+            document.getElementById('emailContent').hidden = false;
+            document.getElementById('mailContent').textContent = mailContent;
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        // 日期时间格式化
+        function formatDateTime(datetime) {
+            const date = new Date(datetime);
+            return `${date.getFullYear()}年${(date.getMonth()+1).toString().padStart(2,'0')}月${date.getDate().toString().padStart(2,'0')}日 
+            ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+        }
+
+        // 一键复制功能
+        function copyContent() {
+            const content = document.getElementById('mailContent');
+            navigator.clipboard.writeText(content.textContent).then(() => {
+                showNotice('内容已复制到剪贴板', 'success');
+            }).catch(() => {
+                showNotice('请手动选择内容进行复制', 'warning');
+            });
+        }
+
+        // 通知系统
+        function showNotice(msg, type = 'success') {
+            const notice = document.createElement('div');
+            notice.className = `alert alert-${type} position-fixed`;
+            notice.style.cssText = 'bottom:20px; right:20px; z-index:9999;';
+            notice.textContent = msg;
+            document.body.appendChild(notice);
+            setTimeout(() => notice.remove(), 3000);
+        }
+
+        // 加急服务弹窗控制
+        function showUrgent() {
+            document.getElementById('urgentModal').style.display = 'block';
+        }
+
+        function hideUrgent() {
+            document.getElementById('urgentModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

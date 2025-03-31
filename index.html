@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>庞美娜金牌陪诊服务</title>
     <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js"></script>
     <style>
         .expert-card {
             background: #f8fbff;
@@ -40,22 +38,6 @@
             display: none;
             justify-content: center;
             align-items: center;
-        }
-        #wechatId {
-            display: block;
-            height: 0;
-            opacity: 0;
-        }
-        .wechat-copy-btn {
-            background: #07c160;
-            color: white;
-            border-radius: 20px;
-            padding: 8px 20px;
-            transition: all 0.3s;
-        }
-        .wechat-copy-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 2px 8px rgba(7,193,96,0.3);
         }
     </style>
     <script>
@@ -172,14 +154,15 @@
                 <h5 class="text-center mb-4">微信加急服务通道</h5>
                 <div class="text-center">
                     <p class="text-danger mb-3">※ 加急服务费用：原价基础上+20%</p>
-                    <div class="alert alert-warning position-relative">
-                        <span id="wechatId">landon6699</span>
-                        <button class="wechat-copy-btn" 
-                                data-clipboard-action="copy" 
-                                data-clipboard-target="#wechatId"
-                                id="copyWechatBtn">
-                            <i class="bi bi-wechat me-2"></i>点击复制微信号
-                        </button>
+                    <div class="alert alert-warning">
+                        <p class="mb-2">请按以下步骤操作：</p>
+                        <ol class="text-start">
+                            <li>打开微信</li>
+                            <li>点击右上角"+"号</li>
+                            <li>选择"添加朋友"</li>
+                            <li>搜索微信号：</li>
+                        </ol>
+                        <div class="wechat-id mt-3">landon6699</div>
                     </div>
                     <p class="text-muted small mt-3">添加时备注：加急+手机号</p>
                 </div>
@@ -196,14 +179,6 @@
             SERVICE_ID: 'service_j5m3ouc',
             TEMPLATE_ID: 'template_55q4df8'
         };
-
-        new ClipboardJS('#copyWechatBtn').on('success', function(e) {
-            showNotice('微信号已复制，正在打开微信...', 'success');
-            setTimeout(() => window.location.href = 'weixin://', 1000);
-            e.clearSelection();
-        }).on('error', function(e) {
-            showNotice('复制失败，请手动选择微信号', 'danger');
-        });
 
         function validateForm() {
             const fields = [
